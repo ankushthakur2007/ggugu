@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Space Puzzle Game</title>
+<style>
+/* --- CSS - UPDATED for visual alignment with provided image --- */
+body {
+    font-family: sans-serif;
+    background-color: #1e1e1e; /* Dark grey background, similar to image */
+    color: #e0e0e0; /* Light grey text, softer than white */
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+}
+
+h2 {
+    color: #fff;
+    margin-top: 20px;
+    text-align: center;
+}
+
+/* --- Common Puzzle Container Styles - No significant changes --- */
+#constellation-puzzle, #planet-order-puzzle {
+    margin: 20px auto;
+    text-align: center;
+    background-color: #252525; /* Slightly darker puzzle container */
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.6); /* Stronger shadow for more depth */
+}
+
+/* --- Constellation Puzzle Styles - No changes --- */
+#constellation-puzzle {
+    width: 400px;
+}
+
+#constellation-select-container {
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#constellation-select-label {
+    margin-right: 10px;
+    color: #ddd; /* Slightly softer label color */
+}
+
+#constellation-select {
+    padding: 8px;
+    font-size: 1em;
+    border-radius: 5px;
+    border: 1px solid #444; /* Darker border for select */
+    background-color: #303030; /* Darker select background */
+    color: #eee;
+    cursor: pointer;
+}
+
+#constellationCanvas {
+    border: 1px solid #444; /* Darker canvas border */
+    background-color: #000;
+    cursor: pointer;
+    display: block;
+    margin: 0 auto;
+}
+
+#constellation-puzzle #instructions, #constellation-puzzle #message {
+    margin-top: 10px;
+}
+
+#constellation-puzzle #instructions {
+    color: #ddd;
+}
+
+#constellation-puzzle #message {
+    color: lightgreen;
+}
+
+
+/* --- Planet Order Puzzle Styles - UPDATED for visual match --- */
+#planet-order-puzzle {
+    width: 700px; /* Wider to accommodate planet bar and slots side-by-side */
+}
+
+#planet-order-puzzle h1 {
+    color: #eee; /* Lighter heading color */
+    font-size: 2em; /* Slightly larger heading */
+    margin-bottom: 15px; /* Reduced bottom margin */
+}
+
+#planet-container {
+    display: flex;
+    justify-content: space-around; /* Evenly space planets */
+    margin-bottom: 25px; /* Increased margin below planets */
+    padding: 10px 0; /* Add padding top and bottom */
+    background-color: #2a2a2a; /* Slightly lighter planet bar background */
+    border-radius: 5px;
+    min-height: 90px; /* Increased height for planet bar */
+    align-items: center;
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.4); /* Inner shadow for planet bar */
+}
+
+#planet-container img {
+    width: 60px; /* Slightly larger planet images */
+    height: 60px;
+    margin: 0 8px; /* Adjust planet spacing */
+    cursor: grab;
+    border: 2px solid #333; /* Darker initial border */
+    border-radius: 50%;
+    transition: border-color 0.3s ease;
+}
+
+#planet-container img.dragging {
+    border-color: lightblue;
+    opacity: 0.85; /* Slightly less transparent during drag */
+}
+
+#order-slots {
+    display: flex;
+    justify-content: space-around; /* Evenly space slots */
+    gap: 15px; /* Increased gap between slots */
+}
+
+.slot {
+    width: 60px; /* Match slot width to planet image width */
+    height: 60px;
+    border: 2px dashed #555; /* Darker dashed border for slots */
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Arial', sans-serif; /* More standard font */
+    font-size: 18px; /* Slightly smaller slot numbers */
+    color: #999; /* Darker slot number color */
+    background-color: #303030; /* Darker slot background */
+    font-weight: bold;
+    box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5); /* Subtle shadow for slots */
+}
+
+.slot.occupied {
+    border-style: solid;
+    border-color: #66bb6a; /* Muted green for occupied slots */
+    background-color: #444; /* Darker occupied slot background */
+    color: #eee; /* Lighter text in occupied slots */
+}
+
+#planet-order-puzzle #message-planets {
+    margin-top: 15px; /* Increased margin for planet message */
+    color: #ffca28; /* Yellow-amber message color, like in image */
+    font-weight: bold;
+    font-size: 1.1em; /* Slightly larger message text */
+}
+
+/* --- Planet Info Area - No significant changes --- */
+#planet-info-area {
+    width: 85%; /* Slightly wider info area */
+    margin: 25px auto; /* Increased margin for info area */
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+}
+
+.planet-info-panel {
+    background-color: #303030; /* Darker info panel background */
+    color: #ddd; /* Softer text color in info panels */
+    border-radius: 8px;
+    padding: 15px;
+    width: 220px; /* Slightly wider info panels */
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.4); /* Slightly stronger shadow */
+    text-align: left; /* Align text to left in info panels for better readability */
+}
+
+.planet-info-panel h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #81d4fa; /* Softer light blue for planet names in info panels */
+    font-size: 1.2em; /* Slightly larger planet names in info panels */
+    text-align: center; /* Center planet names in info panels */
+}
+
+.planet-info-panel p {
+    margin: 0;
+    font-size: 0.95em; /* Slightly larger info panel text */
+    line-height: 1.4; /* Improved line spacing in info panels */
+}
+
+.planet-info-panel.hidden {
+    display: none;
+}
+
+/* --- Hint style - UPDATED to match image --- */
+.hint {
+    color: #9e9e9e; /* Grey hint color, closer to image */
+    font-style: italic;
+    margin-top: 5px; /* Small top margin for hint */
+}
+
+/* --- Button style - UPDATED to match image more closely --- */
+#check-order-button {
+    background-color: #5cb85c; /* Green button color, similar to image */
+    color: white;
+    padding: 12px 24px; /* Slightly larger button padding */
+    border: none;
+    border-radius: 6px; /* Slightly more rounded button corners */
+    cursor: pointer;
+    font-size: 1.1em; /* Slightly larger button text */
+    transition: background-color 0.2s ease; /* Smooth button hover transition */
+    box-shadow: 0 2px 2px rgba(0, 0, 0, 0.3); /* Subtle shadow for button */
+}
+
+#check-order-button:hover {
+    background-color: #4cae4c; /* Darker green on hover */
+}
+
+
+</style>
+</head>
+<body>
+
+    <h2>Space Puzzle Game</h2>
+
+    <div id="constellation-puzzle">
+        <h1>Connect the Constellation!</h1>
+        <div id="constellation-select-container">
+            <label for="constellation-select" id="constellation-select-label">Choose Constellation:</label>
+            <select id="constellation-select">
+                <option value="ursaMajor">Ursa Major (Big Dipper)</option>
+                <option value="orion">Orion</option>
+                <option value="cassiopeia">Cassiopeia</cassiopeia>
+            </select>
+        </div>
+        <canvas id="constellationCanvas" width="400" height="400"></canvas>
+        <div id="instructions"></div>
+        <div id="message"></div>
+    </div>
+
+    <div id="planet-order-puzzle">
+        <h1>Order the Planets!</h1>
+        <div id="planet-container">
+        </div>
+        <div id="order-slots">
+            <div class="slot" id="slot1">1.</div>
+            <div class="slot" id="slot2">2.</div>
+            <div class="slot" id="slot3">3.</div>
+            <div class="slot" id="slot4">4.</div>
+            <div class="slot" id="slot5">5.</div>
+            <div class="slot" id="slot6">6.</div>
+            <div class="slot" id="slot7">7.</div>
+            <div class="slot" id="slot8">8.</div>
+        </div>
+        <button id="check-order-button">Check Order</button>
+        <div id="message-planets">
+            <p>Not quite right. Keep trying!</p>
+            <p class="hint">Hint: Think about the planets' distance from the Sun.</p>
+        </div>
+    </div>
+
+    <div id="planet-info-area">
+    </div>
+
+
+<script>
+/* --- JavaScript for both puzzles combined (Precise Version + Planet Info + NASA Images + RANDOM PLANET ORDER) --- */
+document.addEventListener('DOMContentLoaded', () => {
+    /* ==================================================================
+        Constellation Puzzle JavaScript - START (No Changes)
+        ================================================================== */
+    const canvas = document.getElementById('constellationCanvas');
+    const ctx = canvas.getContext('2d');
+    const messageDiv = document.getElementById('message');
+    const instructionsDiv = document.getElementById('instructions');
+    const constellationSelect = document.getElementById('constellation-select');
+
+    // --- Constellation Data (More Precise Coordinates & Orders) ---
+    // --- You can replace these with more accurate data ---
+    const constellationsData = {
+        ursaMajor: {
+            name: "Ursa Major (Big Dipper)",
+            instructions: "Click the stars in the correct order to form Ursa Major (Big Dipper).",
+            starCoords: [
+                { x: 75, y: 80, name: 'Dubhe' },    // Index 0
+                { x: 150, y: 100, name: 'Merak' },   // Index 1
+                { x: 120, y: 180, name: 'Phecda' },  // Index 2
+                { x: 190, y: 200, name: 'Megrez' },  // Index 3
+                { x: 250, y: 170, name: 'Alioth' },  // Index 4
+                { x: 300, y: 250, name: 'Mizar' },   // Index 5
+                { x: 350, y: 300, name: 'Alkaid' }   // Index 6
+            ],
+            constellationOrder: [0, 1, 2, 3, 4, 5, 6] // Correct order of star indices
+        },
+        orion: {
+            name: "Orion",
+            instructions: "Connect the stars to form Orion. Start with Betelgeuse.",
+            starCoords: [
+                { x: 150, y: 100, name: 'Betelgeuse' }, // Index 0
+                { x: 300, y: 300, name: 'Rigel' },      // Index 1
+                { x: 100, y: 200, name: 'Bellatrix' }, // Index 2
+                { x: 350, y: 200, name: 'Saiph' },      // Index 3
+                { x: 220, y: 220, name: 'Alnilam' },     // Index 4 (Belt - middle)
+                { x: 180, y: 220, name: 'Alnitak' },     // Index 5 (Belt - left)
+                { x: 260, y: 220, name: 'Mintaka' }      // Index 6 (Belt - right)
+            ],
+            constellationOrder: [0, 2, 4, 5, 6, 3, 1] // Example order - verify accuracy!
+        },
+        cassiopeia: {
+            name: "Cassiopeia",
+            instructions: "Form Cassiopeia's W shape.",
+            starCoords: [
+                { x: 50, y: 200, name: 'Schedar' },    // Index 0
+                { x: 120, y: 80,  name: 'Caph' },      // Index 1
+                { x: 200, y: 150, name: 'Tsih' },      // Index 2
+                { x: 280, y: 80,  name: 'Achird' },    // Index 3
+                { x: 350, y: 200, name: 'Ruchbah' }    // Index 4
+            ],
+            constellationOrder: [0, 1, 2, 3, 4] // W shape order - verify accuracy!
+        }
+        // --- Add more constellations here in the same format ---
+    };
+
+    let currentConstellationName = 'ursaMajor'; // Default constellation on load
+    let currentConstellationData; // Will hold the data for the selected constellation
+    let currentStarIndex = 0; // Tracks the next star to be clicked in the sequence
+    let connectedStars = [];     // Array to store indices of correctly connected stars
+
+    // --- Function to load and initialize a constellation ---
+    function loadConstellation(constellationName) {
+        currentConstellationName = constellationName;
+        currentConstellationData = constellationsData[constellationName]; // Get data
+
+        if (!currentConstellationData) { // Error handling if data is missing
+            console.error(`Constellation data not found for: ${constellationName}`);
+            messageDiv.textContent = "Error loading constellation data.";
+            return;
+        }
+
+        instructionsDiv.textContent = currentConstellationData.instructions;
+        starCoords = currentConstellationData.starCoords;
+        constellationOrder = currentConstellationData.constellationOrder;
+
+        connectedStars = []; // Reset connected stars
+        currentStarIndex = 0; // Reset star index
+        messageDiv.textContent = ""; // Clear any previous messages
+
+        drawStars(); // Draw the stars on the canvas
+    }
+
+
+    // --- Function to draw stars on the canvas ---
+    function drawStars() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
+        ctx.fillStyle = '#fff'; // White color for stars
+
+        currentConstellationData.starCoords.forEach(star => {
+            ctx.beginPath();
+            ctx.arc(star.x, star.y, 5, 0, Math.PI * 2); // Draw a small circle for each star
+            ctx.fill();
+        });
+    }
+
+    // --- Function to draw lines connecting stars ---
+    function drawLines() {
+        ctx.strokeStyle = 'lightblue'; // Light blue color for constellation lines
+        ctx.lineWidth = 2;
+
+        connectedStars.forEach((starIndex, index) => {
+            if (index > 0) { // Start drawing lines from the second star onwards
+                ctx.beginPath();
+                const prevStar = currentConstellationData.starCoords[connectedStars[index - 1]];
+                const currentStar = currentConstellationData.starCoords[starIndex];
+                ctx.moveTo(prevStar.x, prevStar.y); // Starting point of the line
+                ctx.lineTo(currentStar.x, currentStar.y); // End point of the line
+                ctx.stroke(); // Draw the line
+            }
+        });
+    }
+
+    // --- Function to check if the constellation is correctly formed ---
+    function checkConstellationWin() {
+        if (connectedStars.length === currentConstellationData.constellationOrder.length) {
+            let isCorrect = true;
+            for (let i = 0; i < currentConstellationData.constellationOrder.length; i++) {
+                if (connectedStars[i] !== currentConstellationData.constellationOrder[i]) {
+                    isCorrect = false; // Order is incorrect
+                    break;
+                }
+            }
+            if (isCorrect) {
+                messageDiv.textContent = `Congratulations! You formed ${currentConstellationData.name}!`;
+            } else {
+                messageDiv.textContent = "Not quite the right order. Try again!";
+                // Optionally, you could reset the puzzle here if you want to be strict
+                // connectedStars = []; drawStars(); // Reset connections and redraw stars
+            }
+        }
+    }
+
+    // --- Event listener for clicks on the canvas ---
+    canvas.addEventListener('click', (event) => {
+        const rect = canvas.getBoundingClientRect(); // Get canvas position relative to viewport
+        const mouseX = event.clientX - rect.left;    // X coordinate of mouse click on canvas
+        const mouseY = event.clientY - rect.top;     // Y coordinate of mouse click on canvas
+
+        currentConstellationData.starCoords.forEach((star, index) => {
+            const distance = Math.sqrt((mouseX - star.x) ** 2 + (mouseY - star.y) ** 2);
+            if (distance < 10) { // Check if click is within 10px radius of a star (star click)
+                if (index === currentConstellationData.constellationOrder[currentStarIndex]) {
+                    // Correct star clicked in sequence
+                    if (!connectedStars.includes(index)) { // Prevent adding same star multiple times
+                        connectedStars.push(index);         // Add star index to connected stars array
+                        currentStarIndex++;             // Move to the next star in the order
+                        drawLines();                    // Update lines on canvas
+                        checkConstellationWin();            // Check if constellation is complete
+                    }
+                } else {
+                    messageDiv.textContent = "Click the stars in the correct order!"; // Feedback for wrong star
+                }
+            }
+        });
+    });
+
+    // --- Event listener for constellation selection dropdown ---
+    constellationSelect.addEventListener('change', (event) => {
+        loadConstellation(event.target.value); // Load selected constellation
+    });
+
+    // --- Initialize constellation puzzle on page load ---
+    loadConstellation(currentConstellationName); // Load default constellation (Ursa Major)
+
+
+    /* ==================================================================
+        Planet Order Puzzle JavaScript - START (SIMPLIFIED IMAGE LOADING)
+        ================================================================== */
+    const planetContainer = document.getElementById('planet-container');
+    const orderSlots = document.getElementById('order-slots');
+    const planetMessageDiv = document.getElementById('message-planets');
+    const checkOrderButton = document.getElementById('check-order-button');
+    const planetInfoArea = document.getElementById('planet-info-area');
+
+    // --- Planet Data (Name, DIRECT Image URLs, Correct Order, Information) ---
+    const planets = [
+        { name: 'Mercury', image: 'https://www.nasa.gov/sites/default/files/styles/ubernode_alt_cropped_breakpoints_theme_nasa_responsive_hero_lg/public/thumbnails/image/mercury_1.jpg', order: 1, info: "The smallest and fastest planet, closest to the Sun." },
+        { name: 'Venus',   image: 'https://www.nasa.gov/sites/default/files/venus_transit_composite.jpg',    order: 2, info: "Hottest planet, with a thick, toxic atmosphere." },
+        { name: 'Earth',   image: 'https://www.nasa.gov/sites/default/files/bluemarble_3.jpg',    order: 3, info: "Our home planet, the only one known to support life." },
+        { name: 'Mars',    image: 'https://www.nasa.gov/sites/default/files/thumbnails/image/pia23195-49.jpg',     order: 4, info: "The 'Red Planet', known for its rusty color and potential for past life." },
+        { name: 'Jupiter', image: 'https://www.nasa.gov/sites/default/files/styles/ubernode_alt_cropped_breakpoints_theme_nasa_responsive_hero_lg/public/jupiter-juno-perijove-22-full-color-annotated.jpg', order: 5, info: "Largest planet, a gas giant with a famous Great Red Spot storm." },
+        { name: 'Saturn',  image: 'https://www.nasa.gov/sites/default/files/styles/ubernode_alt_cropped_breakpoints_theme_nasa_responsive_hero_lg/public/saturn_carousel_0.jpg',  order: 6, info: "Known for its spectacular rings made of ice and rock." },
+        { name: 'Uranus',  image: 'https://www.nasa.gov/sites/default/files/styles/ubernode_alt_cropped_breakpoints_theme_nasa_responsive_hero_lg/public/uranus_carousel.jpg',  order: 7, info: "Ice giant that rotates on its side." },
+        { name: 'Neptune', image: 'https://www.nasa.gov/sites/default/files/styles/ubernode_alt_cropped_breakpoints_theme_nasa_responsive_hero_lg/public/neptune_carousel.jpg', order: 8, info: "Farthest planet from the Sun, a cold and windy ice giant." }
+    ];
+
+    let draggedPlanet = null;
+    let slots = [];
+    let placedPlanets = {};
+
+
+    // --- Shuffle planets array function (Fisher-Yates Shuffle) ---
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]]; // Swap elements
+        }
+        return array;
+    }
+
+
+    // --- Function to create planet images and make them draggable (RANDOMIZED ORDER - SIMPLIFIED) ---
+    function createPlanets() {
+        const shuffledPlanets = shuffleArray([...planets]); // Shuffle a copy
+
+        shuffledPlanets.forEach(planet => {
+            const img = document.createElement('img');
+            img.src = planet.image;
+            img.alt = planet.name;
+            img.draggable = true;
+            img.classList.add('planet');
+            planetContainer.appendChild(img); // Append planet image directly
+            img.addEventListener('dragstart', (event) => {
+                draggedPlanet = planet;
+                img.classList.add('dragging');
+            });
+
+            img.addEventListener('dragend', () => {
+                img.classList.remove('dragging');
+                draggedPlanet = null;
+            });
+        });
+    }
+
+    // --- Function to create planet order slots and set up drop zones (No Changes) ---
+    function createSlots() {
+        for (let i = 1; i <= planets.length; i++) {
+            const slot = document.getElementById(`slot${i}`);
+            slots.push(slot);
+
+            slot.addEventListener('dragover', (event) => {
+                event.preventDefault();
+            });
+
+            slot.addEventListener('drop', (event) => {
+                event.preventDefault();
+                if (slot.children.length === 0 && draggedPlanet) {
+                    const planetImg = document.createElement('img');
+                    planetImg.src = draggedPlanet.image;
+                    planetImg.alt = draggedPlanet.name;
+                    planetImg.classList.add('planet', 'in-slot');
+                    slot.appendChild(planetImg);
+                    slot.classList.add('occupied');
+                    placedPlanets[i] = draggedPlanet;
+                }
+            });
+        }
+    }
+
+    // --- Function to create planet information panels (No Changes) ---
+    function createPlanetInfoPanels() {
+        planets.forEach(planet => {
+            const panel = document.createElement('div');
+            panel.classList.add('planet-info-panel', 'hidden');
+            panel.id = `info-${planet.name.toLowerCase()}`;
+            panel.innerHTML = `<h3>${planet.name}</h3><p>${planet.info}</p>`;
+            planetInfoArea.appendChild(panel);
+        });
+    }
+
+    // --- Function to display a specific planet's info panel (No Changes) ---
+    function displayPlanetInfo(planetName) {
+        const panelId = `info-${planetName.toLowerCase()}`;
+        const panel = document.getElementById(panelId);
+        if (panel) {
+            panel.classList.remove('hidden');
+        }
+    }
+
+    // --- Function to hide all planet info panels (No Changes) ---
+    function hideAllPlanetInfoPanels() {
+        const panels = document.querySelectorAll('.planet-info-panel');
+        panels.forEach(panel => panel.classList.add('hidden'));
+    }
+
+
+    // --- Function to check if planets are in the correct order (No Changes) ---
+    function checkPlanetOrder() {
+        let correctOrder = true;
+        hideAllPlanetInfoPanels();
+
+        for (let i = 1; i <= slots.length; i++) {
+            const slot = slots[i-1];
+            if (slot.children.length > 0) {
+                const planetName = slot.firstChild.alt;
+                const planet = planets.find(p => p.name === planetName);
+                if (planet && planet.order !== i) {
+                    correctOrder = false;
+                    break;
+                } else if (planet) {
+                    displayPlanetInfo(planetName);
+                }
+            } else {
+                correctOrder = false;
+                break;
+            }
+        }
+
+        if (correctOrder) {
+            planetMessageDiv.innerHTML = "<b>Excellent! You ordered the planets correctly!</b><br>See planet info below.";
+        } else {
+            planetMessageDiv.innerHTML = "Not quite right. Keep trying!<br><p class='hint'>Hint: Think about the planets' distance from the Sun.</p>";
+        }
+    }
+
+
+    // --- Event listener for the "Check Order" button (No Changes) ---
+    checkOrderButton.addEventListener('click', checkPlanetOrder);
+
+
+    // --- Initialize planet puzzle on page load ---
+    createPlanets(); // Planets are now created in random order, with simplified image loading
+    createSlots();
+    createPlanetInfoPanels();
+
+});
+</script>
+
+</body>
+</html>
